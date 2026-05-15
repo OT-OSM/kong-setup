@@ -1,5 +1,0 @@
-*.pem
-*.log
-*.retry
-inventory/aws_ec2.yml
-~/.ssh/
