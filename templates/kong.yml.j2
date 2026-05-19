@@ -2,8 +2,9 @@ _format_version: "3.0"
 _transform: true
 
 services:
+
   - name: user-service
-    url: http://{{ backend_host }}:5678
+    url: http://{{ backend_host }}:{{ backend_port | default(5678) }}
 
     plugins:
       - name: rate-limiting
@@ -23,8 +24,9 @@ services:
           - /users
         strip_path: true
 
+
   - name: order-service
-    url: http://{{ backend_host }}:5678
+    url: http://{{ backend_host }}:{{ backend_port | default(5678) }}
 
     plugins:
       - name: rate-limiting
@@ -38,13 +40,14 @@ services:
           - /orders
         strip_path: true
 
+
   - name: payment-service
-    url: http://{{ backend_host }}:5678
+    url: http://{{ backend_host }}:{{ backend_port | default(5678) }}
 
     plugins:
       - name: http-log
         config:
-          http_endpoint: http://mockbin.org/bin/log
+          http_endpoint: {{ log_endpoint | default('http://127.0.0.1:9000/log') }}
           method: POST
           timeout: 1000
 
