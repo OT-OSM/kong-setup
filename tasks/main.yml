@@ -1,13 +1,43 @@
 ---
-- include_tasks: install.yml
+# =====================================================
+# KONG ROLE ENTRYPOINT (MODULAR + MODE-AWARE)
+# =====================================================
 
-- include_tasks: db_healthcheck.yml
+- name: Install Kong and dependencies
+  ansible.builtin.include_tasks: install.yml
 
-- include_tasks: postgres.yml
+# =====================================================
+# DATABASE HEALTH CHECK (SAFE FOR ALL MODES)
+# =====================================================
+
+- name: Check database connectivity
+  ansible.builtin.include_tasks: db_healthcheck.yml
+
+# =====================================================
+# POSTGRES MODE TASKS
+# =====================================================
+
+- name: Setup PostgreSQL (only for postgres mode)
+  ansible.builtin.include_tasks: postgres.yml
   when: (kong_mode | default('postgres') | trim | lower) == "postgres"
 
-- include_tasks: config.yml
+# =====================================================
+# CONFIGURATION DEPLOYMENT
+# =====================================================
 
-- include_tasks: service.yml
+- name: Deploy Kong configuration
+  ansible.builtin.include_tasks: config.yml
 
-- include_tasks: verify.yml
+# =====================================================
+# SERVICE MANAGEMENT
+# =====================================================
+
+- name: Manage Kong service
+  ansible.builtin.include_tasks: service.yml
+
+# =====================================================
+# VERIFICATION
+# =====================================================
+
+- name: Verify Kong deployment
+  ansible.builtin.include_tasks: verify.yml
