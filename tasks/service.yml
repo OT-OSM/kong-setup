@@ -1,28 +1,7 @@
 ---
-# =====================================================
-# KONG VERIFY + MIGRATIONS (SAFE FOR DBLESS + POSTGRES)
-# =====================================================
-
-# -------------------------------
-# VALIDATE KONG CONFIG
-# -------------------------------
-
 - name: Validate Kong config
   command: kong check /etc/kong/kong.conf
   changed_when: false
-  when: kong_mode == "postgres"
-
-# In dbless mode just skip validation or use kong reload check
-- name: Validate Kong config (dbless mode)
-  command: kong check /etc/kong/kong.conf
-  changed_when: false
-  when: kong_mode == "dbless"
-  failed_when: false
-
-
-# -------------------------------
-# STOP KONG SAFELY
-# -------------------------------
 
 - name: Stop Kong safely
   systemd:
@@ -30,20 +9,10 @@
     state: stopped
   ignore_errors: yes
 
-
-# =====================================================
-# POSTGRES ONLY FLOW
-# =====================================================
-
-# -------------------------------
-# WAIT FOR DB CONNECTION
-# -------------------------------
-
 - name: Wait for PostgreSQL stable connection
   shell: |
     PGPASSWORD={{ kong_pg_password }} psql \
-    -h {{ kong_pg_host }} \
-    -p {{ kong_pg_port }} \
+    -h 127.0.0.1 \
     -U {{ kong_pg_user }} \
     -d postgres \
     -c "SELECT 1;"
@@ -54,61 +23,26 @@
   changed_when: false
   when: kong_mode == "postgres"
 
-
-# -------------------------------
-# CHECK IF KONG SCHEMA EXISTS (SAFE CHECK)
-# -------------------------------
-
 - name: Check Kong schema existence
-  shell: |
-    sudo -u postgres psql -d {{ kong_pg_database }} -tAc \
-    "SELECT to_regclass('public.schema_migrations');"
+  shell: sudo -u postgres psql -d {{ kong_pg_database }} -c "\dt"
   register: schema_check
-  changed_when: false
   failed_when: false
+  changed_when: false
   when: kong_mode == "postgres"
-
-
-# -------------------------------
-# BOOTSTRAP DATABASE (FIRST TIME ONLY)
-# -------------------------------
 
 - name: Run migrations bootstrap (first time only)
   command: kong migrations bootstrap -c /etc/kong/kong.conf
-  register: bootstrap
-  retries: 10
-  delay: 5
-  until: bootstrap.rc == 0
   when:
     - kong_mode == "postgres"
-    - schema_check.stdout == ""
-
-
-# -------------------------------
-# RUN MIGRATIONS UP
-# -------------------------------
+    - "'kong' not in schema_check.stdout"
 
 - name: Run migrations up
   command: kong migrations up -c /etc/kong/kong.conf
-  register: mig_up
-  retries: 10
-  delay: 5
-  until: mig_up.rc == 0
   when: kong_mode == "postgres"
-
-
-# -------------------------------
-# FINALIZE MIGRATIONS
-# -------------------------------
 
 - name: Run migrations finish
   command: kong migrations finish -c /etc/kong/kong.conf
   when: kong_mode == "postgres"
-
-
-# -------------------------------
-# START KONG
-# -------------------------------
 
 - name: Start Kong
   systemd:
