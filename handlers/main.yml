@@ -4,18 +4,23 @@
 # =====================================================
 
 - name: restart kong
-  systemd:
+  ansible.builtin.systemd:
     name: kong
     state: restarted
-    daemon_reload: yes
+    daemon_reload: true
   listen: restart kong
 
+# NOTE:
+# Kong does NOT properly support systemd "reload" in most setups.
+# So we map reload → restart for safety.
+
 - name: reload kong
-  systemd:
+  ansible.builtin.systemd:
     name: kong
-    state: reloaded
+    state: restarted
+    daemon_reload: true
   listen: reload kong
 
 - name: reload systemd
-  systemd:
-    daemon_reload: yes
+  ansible.builtin.systemd:
+    daemon_reload: true
