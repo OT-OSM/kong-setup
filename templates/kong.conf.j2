@@ -11,8 +11,9 @@ pg_user = {{ kong_pg_user }}
 pg_password = {{ kong_pg_password }}
 pg_database = {{ kong_pg_database }}
 
-{% elif kong_mode == "dbless" %}
+{% else %}
 database = off
+declarative_config = /etc/kong/kong.yml
 {% endif %}
 
 # -------------------------------
