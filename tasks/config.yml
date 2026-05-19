@@ -1,26 +1,53 @@
 ---
+# =====================================================
+# KONG CONFIG DEPLOYMENT (DBLESS + POSTGRES SAFE)
+# =====================================================
+
 - name: Create Kong config directory
   file:
     path: /etc/kong
     state: directory
+    mode: '0755'
+
+# -------------------------------
+# Deploy Kong main config
+# -------------------------------
 
 - name: Deploy kong.conf
   template:
     src: kong.conf.j2
     dest: /etc/kong/kong.conf
+    mode: '0644'
   notify: restart kong
 
-- name: Deploy kong.yml
+# -------------------------------
+# Deploy DBLESS declarative config
+# -------------------------------
+
+- name: Deploy kong.yml (dbless mode only)
   template:
     src: kong.yml.j2
     dest: /etc/kong/kong.yml
+    mode: '0644'
   when: kong_mode == "dbless"
   notify: reload kong
+
+# -------------------------------
+# Deploy systemd service (mode aware)
+# -------------------------------
 
 - name: Deploy systemd service
   template:
     src: kong.service.j2
     dest: /etc/systemd/system/kong.service
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart kong
+
+# -------------------------------
+# Reload systemd daemon
+# -------------------------------
 
 - name: Reload systemd
   systemd:
