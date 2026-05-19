@@ -1,2 +1,15 @@
 ---
+# =====================================================
+# KONG ROLE INTERNAL VARIABLES
+# =====================================================
+
 kong_version: "3.9.0"
+
+kong_user: "kong"
+kong_group: "kong"
+
+kong_install_dir: "/usr/local/kong"
+kong_conf_dir: "/etc/kong"
+kong_log_dir: "/var/log/kong"
+
+kong_binary: "/usr/local/bin/kong"
