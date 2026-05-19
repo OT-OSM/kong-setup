@@ -1,8 +1,10 @@
 ---
 - include_tasks: install.yml
 
+- include_tasks: db_healthcheck.yml
+
 - include_tasks: postgres.yml
-  when: kong_mode == "postgres"
+  when: (kong_mode | default('postgres') | trim | lower) == "postgres"
 
 - include_tasks: config.yml
 
