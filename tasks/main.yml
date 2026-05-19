@@ -1,11 +1,11 @@
 ---
-- import_tasks: install.yml
+- include_tasks: install.yml
 
-- import_tasks: postgres.yml
+- include_tasks: postgres.yml
   when: kong_mode == "postgres"
 
-- import_tasks: config.yml
+- include_tasks: config.yml
 
-- import_tasks: service.yml
+- include_tasks: service.yml
 
-- import_tasks: verify.yml
+- include_tasks: verify.yml
