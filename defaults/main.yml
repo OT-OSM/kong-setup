@@ -1,18 +1,123 @@
 ---
+# =====================================================
+# KONG VERSION
+# =====================================================
+
 kong_version: "3.9.0"
 
-kong_mode: "postgres"
-# values:
-# dbless
-# postgres
+# =====================================================
+# KONG MODE
+# =====================================================
 
-kong_admin_listen: "127.0.0.1:8001"
-kong_proxy_listen: "0.0.0.0:8000"
+kong_mode: "postgres"
+# supported values:
+# - postgres
+# - dbless
+
+# =====================================================
+# KONG NETWORK CONFIGURATION
+# =====================================================
+
+kong_admin_host: "127.0.0.1"
+kong_admin_port: 8001
+
+kong_proxy_host: "0.0.0.0"
+kong_proxy_port: 8000
+
+kong_admin_listen: "{{ kong_admin_host }}:{{ kong_admin_port }}"
+kong_proxy_listen: "{{ kong_proxy_host }}:{{ kong_proxy_port }}"
+
+# =====================================================
+# POSTGRES CONFIGURATION
+# =====================================================
 
 kong_pg_host: "127.0.0.1"
 kong_pg_port: 5432
+
 kong_pg_database: "kong"
 kong_pg_user: "kong"
 kong_pg_password: "kong"
 
+# =====================================================
+# BACKEND CONFIGURATION
+# =====================================================
+
 backend_host: "127.0.0.1"
+backend_port: 5678
+
+# =====================================================
+# LOGGING
+# =====================================================
+
+log_endpoint: "http://127.0.0.1:9000/log"
+
+# =====================================================
+# KONG VERIFY SETTINGS
+# =====================================================
+
+kong_verify_retries: 30
+kong_verify_delay: 5
+
+# =====================================================
+# KONG NGINX SETTINGS
+# =====================================================
+
+kong_nginx_daemon: "on"
+
+# =====================================================
+# DBLESS SERVICES CONFIGURATION
+# =====================================================
+
+kong_services:
+
+  - name: user-service
+    host: "{{ backend_host }}"
+    port: "{{ backend_port }}"
+
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 5
+          policy: local
+
+      - name: jwt
+        config:
+          key_claim_name: iss
+          claims_to_verify:
+            - exp
+
+    routes:
+      - name: user-route
+        path: /users
+        strip_path: true
+
+  - name: order-service
+    host: "{{ backend_host }}"
+    port: "{{ backend_port }}"
+
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 5
+          policy: local
+
+    routes:
+      - name: order-route
+        path: /orders
+        strip_path: true
+
+  - name: payment-service
+    host: "{{ backend_host }}"
+    port: "{{ backend_port }}"
+
+    plugins:
+      - name: http-log
+        config:
+          http_endpoint: "{{ log_endpoint }}"
+          method: POST
+          timeout: 1000
+
+    routes:
+      - name: payment-route
+        path: /payments
+        strip_path: true
