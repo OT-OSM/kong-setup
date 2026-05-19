@@ -1,7 +1,14 @@
 [Unit]
 Description=Kong API Gateway
-After=network.target postgresql.service
+After=network.target
+
+# -------------------------------
+# PostgreSQL dependency only for DB mode
+# -------------------------------
+{% if kong_mode == "postgres" %}
+After=postgresql.service
 Requires=postgresql.service
+{% endif %}
 
 [Service]
 Type=forking
