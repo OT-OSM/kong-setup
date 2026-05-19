@@ -2,20 +2,13 @@
 Description=Kong API Gateway
 After=network.target
 
-# -------------------------------
-# PostgreSQL dependency only for DB mode
-# -------------------------------
-{% if kong_mode == "postgres" %}
-After=postgresql.service
-Requires=postgresql.service
-{% endif %}
-
 [Service]
 Type=forking
 ExecStart=/usr/local/bin/kong start -c /etc/kong/kong.conf
 ExecStop=/usr/local/bin/kong stop -c /etc/kong/kong.conf
 ExecReload=/usr/local/bin/kong reload -c /etc/kong/kong.conf
 Restart=on-failure
+RestartSec=5
 LimitNOFILE=4096
 
 [Install]
