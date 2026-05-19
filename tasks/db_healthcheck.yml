@@ -1,0 +1,22 @@
+---
+- name: PostgreSQL port reachability check
+  shell: pg_isready -h {{ kong_pg_host }} -p {{ kong_pg_port }}
+  register: pg_ready
+  retries: 10
+  delay: 3
+  until: pg_ready.rc == 0
+  changed_when: false
+
+- name: PostgreSQL authentication test
+  shell: |
+    PGPASSWORD={{ kong_pg_password }} psql \
+    -h {{ kong_pg_host }} \
+    -U {{ kong_pg_user }} \
+    -d postgres \
+    -c "SELECT 1;"
+  register: pg_test
+  changed_when: false
+
+- name: Show PostgreSQL connectivity status
+  debug:
+    msg: "PostgreSQL is reachable and responding"
