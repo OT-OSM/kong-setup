@@ -2,7 +2,8 @@
 # KONG CONFIG (DBLESS + POSTGRES SUPPORT)
 # =====================================================
 
-{% if kong_mode == "postgres" %}
+{% if (kong_mode | default('postgres') | trim | lower) == "postgres" %}
+
 database = postgres
 
 pg_host = {{ kong_pg_host }}
@@ -12,13 +13,30 @@ pg_password = {{ kong_pg_password }}
 pg_database = {{ kong_pg_database }}
 
 {% else %}
+
 database = off
-declarative_config = /etc/kong/kong.yml
+declarative_config = {{ kong_conf_dir | default('/etc/kong') }}/kong.yml
+
 {% endif %}
 
-# -------------------------------
+# =====================================================
 # ADMIN / PROXY LISTENERS
-# -------------------------------
+# =====================================================
 
-admin_listen = {{ kong_admin_listen | default("127.0.0.1:8001") }}
-proxy_listen = {{ kong_proxy_listen | default("0.0.0.0:8000") }}
+admin_listen = {{ kong_admin_listen | default('127.0.0.1:8001') }}
+proxy_listen = {{ kong_proxy_listen | default('0.0.0.0:8000') }}
+
+# =====================================================
+# LOGS
+# =====================================================
+
+proxy_access_log = {{ kong_log_dir | default('/var/log/kong') }}/access.log
+proxy_error_log  = {{ kong_log_dir | default('/var/log/kong') }}/error.log
+admin_access_log = {{ kong_log_dir | default('/var/log/kong') }}/admin_access.log
+admin_error_log  = {{ kong_log_dir | default('/var/log/kong') }}/admin_error.log
+
+# =====================================================
+# NGINX
+# =====================================================
+
+nginx_daemon = on
