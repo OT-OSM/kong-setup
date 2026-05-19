@@ -4,26 +4,29 @@
 # =====================================================
 
 - name: Download Kong package
-  get_url:
-    url: "https://packages.konghq.com/public/gateway-39/deb/ubuntu/pool/noble/main/k/ko/kong_{{ kong_version }}/kong_{{ kong_version }}_amd64.deb"
-    dest: /tmp/kong.deb
+  ansible.builtin.get_url:
+    url: >-
+      https://packages.konghq.com/public/gateway-39/deb/ubuntu/pool/noble/main/k/ko/kong_{{ kong_version }}/kong_{{ kong_version }}_amd64.deb
+    dest: "{{ kong_download_path | default('/tmp/kong.deb') }}"
     mode: '0644'
-    force: yes
+    force: true
+    timeout: 60
+  register: kong_download
 
-# -------------------------------
-# Install Kong package safely
-# -------------------------------
+# =====================================================
+# INSTALL PACKAGE
+# =====================================================
 
 - name: Install Kong package
-  apt:
-    deb: /tmp/kong.deb
+  ansible.builtin.apt:
+    deb: "{{ kong_download_path | default('/tmp/kong.deb') }}"
     state: present
 
-# -------------------------------
-# Hold Kong version (prevent auto-upgrade)
-# -------------------------------
+# =====================================================
+# HOLD VERSION (PREVENT AUTO UPGRADE)
+# =====================================================
 
 - name: Hold Kong package version
-  dpkg_selections:
+  ansible.builtin.dpkg_selections:
     name: kong
     selection: hold
