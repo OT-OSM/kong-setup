@@ -1,6 +1,21 @@
 ---
+# =====================================================
+# KONG HANDLERS (SYSTEMD-BASED - PRODUCTION SAFE)
+# =====================================================
+
 - name: restart kong
-  command: kong restart -c /etc/kong/kong.conf
+  systemd:
+    name: kong
+    state: restarted
+    daemon_reload: yes
+  listen: restart kong
 
 - name: reload kong
-  command: kong reload -c /etc/kong/kong.conf
+  systemd:
+    name: kong
+    state: reloaded
+  listen: reload kong
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
