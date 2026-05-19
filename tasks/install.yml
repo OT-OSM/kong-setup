@@ -1,13 +1,29 @@
 ---
+# =====================================================
+# KONG INSTALLATION (SAFE + IDEMPOTENT)
+# =====================================================
+
 - name: Download Kong package
   get_url:
     url: "https://packages.konghq.com/public/gateway-39/deb/ubuntu/pool/noble/main/k/ko/kong_{{ kong_version }}/kong_{{ kong_version }}_amd64.deb"
     dest: /tmp/kong.deb
+    mode: '0644'
+    force: yes
+
+# -------------------------------
+# Install Kong package safely
+# -------------------------------
 
 - name: Install Kong package
   apt:
     deb: /tmp/kong.deb
-  ignore_errors: true
+    state: present
+
+# -------------------------------
+# Hold Kong version (prevent auto-upgrade)
+# -------------------------------
 
 - name: Hold Kong package version
-  command: apt-mark hold kong
+  dpkg_selections:
+    name: kong
+    selection: hold
