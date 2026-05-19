@@ -1,21 +1,26 @@
 ---
+# =====================================================
+# KONG SERVICE MANAGEMENT (DBLESS + POSTGRES SAFE)
+# =====================================================
+
 - name: Validate Kong config
-  command: kong check /etc/kong/kong.conf
+  ansible.builtin.command: kong check {{ kong_conf_dir }}/kong.conf
   changed_when: false
 
 - name: Stop Kong safely
-  systemd:
+  ansible.builtin.systemd:
     name: kong
     state: stopped
-  ignore_errors: yes
+  ignore_errors: true
 
 # =====================================================
 # POSTGRES MODE BLOCK
 # =====================================================
+
 - block:
 
     - name: Wait for PostgreSQL stable connection
-      shell: |
+      ansible.builtin.shell: |
         PGPASSWORD={{ kong_pg_password }} psql \
         -h {{ kong_pg_host }} \
         -U {{ kong_pg_user }} \
@@ -28,28 +33,37 @@
       changed_when: false
 
     - name: Check Kong schema existence
-      shell: sudo -u postgres psql -d {{ kong_pg_database }} -c "\dt"
+      ansible.builtin.shell: |
+        PGPASSWORD={{ kong_pg_password }} psql \
+        -h {{ kong_pg_host }} \
+        -U {{ kong_pg_user }} \
+        -d {{ kong_pg_database }} \
+        -c "\dt"
       register: schema_check
-      failed_when: false
       changed_when: false
+      failed_when: false
 
     - name: Run migrations bootstrap (first time only)
-      command: kong migrations bootstrap -c /etc/kong/kong.conf
+      ansible.builtin.command: >
+        kong migrations bootstrap -c {{ kong_conf_dir }}/kong.conf
       when: "'kong' not in schema_check.stdout"
 
     - name: Run migrations up
-      command: kong migrations up -c /etc/kong/kong.conf
+      ansible.builtin.command: >
+        kong migrations up -c {{ kong_conf_dir }}/kong.conf
 
     - name: Run migrations finish
-      command: kong migrations finish -c /etc/kong/kong.conf
+      ansible.builtin.command: >
+        kong migrations finish -c {{ kong_conf_dir }}/kong.conf
 
   when: (kong_mode | default('postgres') | trim | lower) == "postgres"
 
 # =====================================================
 # START KONG (COMMON FOR BOTH MODES)
 # =====================================================
+
 - name: Start Kong
-  systemd:
+  ansible.builtin.systemd:
     name: kong
     state: started
-    enabled: yes
+    enabled: true
