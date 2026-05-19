@@ -1,7 +1,7 @@
 ---
 kong_version: "3.9.0"
 
-kong_mode: "dbless"
+kong_mode: "postgres"
 # values:
 # dbless
 # postgres
