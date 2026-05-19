@@ -1,5 +1,9 @@
 ---
-- name: Install PostgreSQL
+# =====================================================
+# PostgreSQL setup for Kong (ONLY when kong_mode=postgres)
+# =====================================================
+
+- name: Install PostgreSQL packages
   apt:
     name:
       - postgresql
@@ -7,7 +11,7 @@
     state: present
     update_cache: yes
 
-- name: Start PostgreSQL service
+- name: Start and enable PostgreSQL service
   service:
     name: postgresql
     state: started
@@ -19,12 +23,12 @@
 
 - name: Wait for PostgreSQL TCP port
   wait_for:
-    host: 127.0.0.1
-    port: 5432
+    host: "{{ kong_pg_host | default('127.0.0.1') }}"
+    port: "{{ kong_pg_port | default(5432) }}"
     timeout: 120
 
 - name: Wait for PostgreSQL fully ready
-  shell: pg_isready -h 127.0.0.1 -p 5432
+  shell: pg_isready -h {{ kong_pg_host | default('127.0.0.1') }} -p {{ kong_pg_port | default(5432) }}
   register: pg_ready
   retries: 30
   delay: 3
@@ -32,17 +36,17 @@
   changed_when: false
 
 # -------------------------------
-# FIND POSTGRES CONFIG
+# CONFIGURE POSTGRESQL (LISTEN ADDRESS)
 # -------------------------------
 
-- name: Find PostgreSQL config
+- name: Find PostgreSQL config file
   find:
     paths: /etc/postgresql
     patterns: postgresql.conf
     recurse: yes
   register: pg_conf
 
-- name: Ensure PostgreSQL listens on IPv4 only
+- name: Set PostgreSQL listen address to localhost
   lineinfile:
     path: "{{ pg_conf.files[0].path }}"
     regexp: '^#?listen_addresses'
@@ -51,23 +55,27 @@
   when: pg_conf.matched > 0
 
 # -------------------------------
-# CREATE USER
+# CREATE KONG DB USER
 # -------------------------------
 
-- name: Create Kong DB user
+- name: Create Kong database user (idempotent)
+  become: true
+  become_user: postgres
   shell: |
-    sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='{{ kong_pg_user }}'" | grep -q 1 || \
-    sudo -u postgres psql -c "CREATE USER {{ kong_pg_user }} WITH PASSWORD '{{ kong_pg_password }}';"
+    psql -tc "SELECT 1 FROM pg_roles WHERE rolname='{{ kong_pg_user }}'" | grep -q 1 || \
+    psql -c "CREATE USER {{ kong_pg_user }} WITH PASSWORD '{{ kong_pg_password }}';"
   args:
     executable: /bin/bash
 
 # -------------------------------
-# CREATE DATABASE
+# CREATE KONG DATABASE
 # -------------------------------
 
-- name: Create Kong database
+- name: Create Kong database (idempotent)
+  become: true
+  become_user: postgres
   shell: |
-    sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw {{ kong_pg_database }} || \
-    sudo -u postgres psql -c "CREATE DATABASE {{ kong_pg_database }} OWNER {{ kong_pg_user }};"
+    psql -lqt | cut -d \| -f 1 | grep -qw {{ kong_pg_database }} || \
+    psql -c "CREATE DATABASE {{ kong_pg_database }} OWNER {{ kong_pg_user }};"
   args:
     executable: /bin/bash
