@@ -1,15 +1,31 @@
 ---
 # =====================================================
-# KONG ROLE INTERNAL VARIABLES
+# KONG ROLE INTERNAL VARIABLES (SYSTEM CONSTANTS ONLY)
 # =====================================================
 
 kong_version: "3.9.0"
 
+# =====================================================
+# SYSTEM USERS / GROUPS
+# =====================================================
+
 kong_user: "kong"
 kong_group: "kong"
+
+# =====================================================
+# FILE SYSTEM PATHS (STATIC INSTALL STRUCTURE)
+# =====================================================
 
 kong_install_dir: "/usr/local/kong"
 kong_conf_dir: "/etc/kong"
 kong_log_dir: "/var/log/kong"
 
 kong_binary: "/usr/local/bin/kong"
+
+# =====================================================
+# SYSTEM SERVICE CONFIGURATION
+# =====================================================
+
+kong_service_name: "kong"
+
+kong_systemd_unit_path: "/etc/systemd/system/kong.service"
