@@ -4,25 +4,38 @@
 # =====================================================
 
 - name: Wait for Kong Admin API to be ready
-  uri:
+  ansible.builtin.uri:
     url: "http://{{ kong_admin_host | default('127.0.0.1') }}:{{ kong_admin_port | default(8001) }}"
     method: GET
-    return_content: no
+    return_content: false
     status_code: 200
     timeout: 5
   register: kong_api
-  retries: 30
-  delay: 5
+  retries: "{{ kong_verify_retries | default(30) }}"
+  delay: "{{ kong_verify_delay | default(5) }}"
   until: kong_api is defined and kong_api.status == 200
   changed_when: false
   failed_when: false
 
-
-# -------------------------------
-# EXTRA SAFETY CHECK (optional but recommended)
-# -------------------------------
+# =====================================================
+# VERIFY RESPONSE
+# =====================================================
 
 - name: Confirm Kong Admin API is responding
-  debug:
+  ansible.builtin.debug:
     msg: "Kong Admin API is up and running"
-  when: kong_api.status == 200
+  when:
+    - kong_api is defined
+    - kong_api.status == 200
+
+# =====================================================
+# FAIL SAFELY IF API IS UNREACHABLE
+# =====================================================
+
+- name: Fail if Kong Admin API is unreachable
+  ansible.builtin.fail:
+    msg: >
+      Kong Admin API is not reachable at
+      http://{{ kong_admin_host | default('127.0.0.1') }}:{{ kong_admin_port | default(8001) }}
+  when:
+    - kong_api is not defined or kong_api.status != 200
