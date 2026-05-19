@@ -1,22 +1,38 @@
 ---
+# =====================================================
+# POSTGRESQL HEALTH CHECK (CLOUD-READY + SAFE)
+# =====================================================
+
 - name: PostgreSQL port reachability check
-  shell: pg_isready -h {{ kong_pg_host }} -p {{ kong_pg_port }}
+  ansible.builtin.shell: >
+    pg_isready -h {{ kong_pg_host }} -p {{ kong_pg_port }}
   register: pg_ready
   retries: 10
   delay: 3
   until: pg_ready.rc == 0
   changed_when: false
 
+# =====================================================
+# POSTGRES AUTHENTICATION TEST
+# =====================================================
+
 - name: PostgreSQL authentication test
-  shell: |
+  ansible.builtin.shell: |
     PGPASSWORD={{ kong_pg_password }} psql \
     -h {{ kong_pg_host }} \
     -U {{ kong_pg_user }} \
     -d postgres \
     -c "SELECT 1;"
   register: pg_test
+  retries: 5
+  delay: 3
+  until: pg_test.rc == 0
   changed_when: false
 
+# =====================================================
+# FINAL STATUS OUTPUT
+# =====================================================
+
 - name: Show PostgreSQL connectivity status
-  debug:
+  ansible.builtin.debug:
     msg: "PostgreSQL is reachable and responding"
