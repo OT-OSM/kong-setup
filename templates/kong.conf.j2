@@ -1,10 +1,23 @@
+# =====================================================
+# KONG CONFIG (DBLESS + POSTGRES SUPPORT)
+# =====================================================
+
+{% if kong_mode == "postgres" %}
 database = postgres
 
-pg_host = 127.0.0.1
-pg_port = 5432
+pg_host = {{ kong_pg_host }}
+pg_port = {{ kong_pg_port }}
 pg_user = {{ kong_pg_user }}
 pg_password = {{ kong_pg_password }}
 pg_database = {{ kong_pg_database }}
 
-admin_listen = 127.0.0.1:8001
-proxy_listen = 0.0.0.0:8000
+{% elif kong_mode == "dbless" %}
+database = off
+{% endif %}
+
+# -------------------------------
+# ADMIN / PROXY LISTENERS
+# -------------------------------
+
+admin_listen = {{ kong_admin_listen | default("127.0.0.1:8001") }}
+proxy_listen = {{ kong_proxy_listen | default("0.0.0.0:8000") }}
