@@ -3,56 +3,30 @@ _transform: true
 
 services:
 
-  - name: user-service
-    url: http://{{ backend_host }}:{{ backend_port | default(5678) }}
+{% for service in kong_services %}
 
+  - name: {{ service.name }}
+    url: http://{{ service.host }}:{{ service.port }}
+
+{% if service.plugins is defined %}
     plugins:
-      - name: rate-limiting
+{% for plugin in service.plugins %}
+      - name: {{ plugin.name }}
+{% if plugin.config is defined %}
         config:
-          minute: 5
-          policy: local
-
-      - name: jwt
-        config:
-          key_claim_name: iss
-          claims_to_verify:
-            - exp
+{% for key, value in plugin.config.items() %}
+          {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
 
     routes:
-      - name: user-route
+{% for route in service.routes %}
+      - name: {{ route.name }}
         paths:
-          - /users
-        strip_path: true
+          - {{ route.path }}
+        strip_path: {{ route.strip_path | default(true) }}
 
-
-  - name: order-service
-    url: http://{{ backend_host }}:{{ backend_port | default(5678) }}
-
-    plugins:
-      - name: rate-limiting
-        config:
-          minute: 5
-          policy: local
-
-    routes:
-      - name: order-route
-        paths:
-          - /orders
-        strip_path: true
-
-
-  - name: payment-service
-    url: http://{{ backend_host }}:{{ backend_port | default(5678) }}
-
-    plugins:
-      - name: http-log
-        config:
-          http_endpoint: {{ log_endpoint | default('http://127.0.0.1:9000/log') }}
-          method: POST
-          timeout: 1000
-
-    routes:
-      - name: payment-route
-        paths:
-          - /payments
-        strip_path: true
+{% endfor %}
+{% endfor %}
