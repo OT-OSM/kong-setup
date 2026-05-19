@@ -4,12 +4,20 @@ After=network.target
 
 [Service]
 Type=forking
-ExecStart=/usr/local/bin/kong start -c /etc/kong/kong.conf
-ExecStop=/usr/local/bin/kong stop -c /etc/kong/kong.conf
-ExecReload=/usr/local/bin/kong reload -c /etc/kong/kong.conf
+
+ExecStart={{ kong_binary }} start -c {{ kong_conf_dir }}/kong.conf
+ExecStop={{ kong_binary }} stop -c {{ kong_conf_dir }}/kong.conf
+ExecReload={{ kong_binary }} reload -c {{ kong_conf_dir }}/kong.conf
+
 Restart=on-failure
 RestartSec=5
+
 LimitNOFILE=4096
+
+User={{ kong_user }}
+Group={{ kong_group }}
+
+WorkingDirectory={{ kong_install_dir }}
 
 [Install]
 WantedBy=multi-user.target
