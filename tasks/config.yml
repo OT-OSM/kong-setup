@@ -4,40 +4,46 @@
 # =====================================================
 
 - name: Create Kong config directory
-  file:
-    path: /etc/kong
+  ansible.builtin.file:
+    path: "{{ kong_conf_dir }}"
     state: directory
+    owner: "{{ kong_user }}"
+    group: "{{ kong_group }}"
     mode: '0755'
 
-# -------------------------------
-# Deploy Kong main config
-# -------------------------------
+# =====================================================
+# DEPLOY MAIN KONG CONFIG
+# =====================================================
 
 - name: Deploy kong.conf
-  template:
+  ansible.builtin.template:
     src: kong.conf.j2
-    dest: /etc/kong/kong.conf
+    dest: "{{ kong_conf_dir }}/kong.conf"
+    owner: "{{ kong_user }}"
+    group: "{{ kong_group }}"
     mode: '0644'
   notify: restart kong
 
-# -------------------------------
-# Deploy DBLESS declarative config
-# -------------------------------
+# =====================================================
+# DEPLOY DBLESS DECLARATIVE CONFIG
+# =====================================================
 
 - name: Deploy kong.yml (dbless mode only)
-  template:
+  ansible.builtin.template:
     src: kong.yml.j2
-    dest: /etc/kong/kong.yml
+    dest: "{{ kong_conf_dir }}/kong.yml"
+    owner: "{{ kong_user }}"
+    group: "{{ kong_group }}"
     mode: '0644'
-  when: kong_mode == "dbless"
+  when: (kong_mode | default('postgres') | trim | lower) == "dbless"
   notify: reload kong
 
-# -------------------------------
-# Deploy systemd service (mode aware)
-# -------------------------------
+# =====================================================
+# DEPLOY SYSTEMD SERVICE
+# =====================================================
 
-- name: Deploy systemd service
-  template:
+- name: Deploy Kong systemd service
+  ansible.builtin.template:
     src: kong.service.j2
     dest: /etc/systemd/system/kong.service
     mode: '0644'
@@ -45,10 +51,10 @@
     - reload systemd
     - restart kong
 
-# -------------------------------
-# Reload systemd daemon
-# -------------------------------
+# =====================================================
+# RELOAD SYSTEMD
+# =====================================================
 
-- name: Reload systemd
-  systemd:
-    daemon_reload: yes
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
