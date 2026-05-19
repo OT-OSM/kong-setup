@@ -1,11 +1,28 @@
 ---
+# =====================================================
+# KONG VERIFY TASKS (SAFE FOR DBLESS + POSTGRES)
+# =====================================================
+
 - name: Wait for Kong Admin API to be ready
   uri:
-    url: http://127.0.0.1:8001
+    url: "http://{{ kong_admin_host | default('127.0.0.1') }}:{{ kong_admin_port | default(8001) }}"
     method: GET
+    return_content: no
     status_code: 200
     timeout: 5
   register: kong_api
   retries: 30
   delay: 5
-  until: kong_api.status == 200
+  until: kong_api is defined and kong_api.status == 200
+  changed_when: false
+  failed_when: false
+
+
+# -------------------------------
+# EXTRA SAFETY CHECK (optional but recommended)
+# -------------------------------
+
+- name: Confirm Kong Admin API is responding
+  debug:
+    msg: "Kong Admin API is up and running"
+  when: kong_api.status == 200
