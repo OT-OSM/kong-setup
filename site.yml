@@ -1,0 +1,9 @@
+- hosts: kong
+  become: yes
+  roles:
+    - role: kong
+
+- hosts: loadbalancer
+  become: yes
+  roles:
+    - role: loadbalancer

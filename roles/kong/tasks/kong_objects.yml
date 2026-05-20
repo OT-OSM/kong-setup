@@ -1,0 +1,37 @@
+- name: Create Service
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8001/services
+    method: POST
+    body:
+      name: "{{ kong_service_name }}"
+      url: "{{ kong_upstream_url }}"
+    body_format: json
+    status_code: [201, 409]
+
+- name: Create Route
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/routes"
+    method: POST
+    body:
+      paths:
+        - "{{ kong_route_path }}"
+    body_format: json
+    status_code: [201, 409]
+
+- name: Enable Key Auth
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/plugins"
+    method: POST
+    body:
+      name: key-auth
+    body_format: json
+    status_code: [201, 409]
+
+- name: Enable Prometheus Plugin
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8001/plugins
+    method: POST
+    body:
+      name: prometheus
+    body_format: json
+    status_code: [201, 409]

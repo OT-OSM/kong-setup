@@ -1,0 +1,16 @@
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name: postgresql
+    state: present
+    update_cache: yes
+
+- name: Enable PostgreSQL
+  ansible.builtin.systemd:
+    name: postgresql
+    enabled: yes
+    state: started
+
+- name: Create Kong DB user
+  ansible.builtin.shell: |
+    sudo -u postgres psql -c "CREATE USER kong WITH PASSWORD 'kong';" || true
+    sudo -u postgres psql -c "CREATE DATABASE kong OWNER kong;" || true

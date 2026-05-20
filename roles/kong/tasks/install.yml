@@ -1,0 +1,16 @@
+- name: Download Kong package
+  ansible.builtin.get_url:
+    url: "https://packages.konghq.com/public/gateway-39/deb/ubuntu/pool/noble/main/k/ko/kong_{{ kong_version }}/kong_{{ kong_version }}_amd64.deb"
+    dest: "{{ kong_download_path }}"
+    mode: '0644'
+    force: true
+
+- name: Install Kong package
+  ansible.builtin.apt:
+    deb: "{{ kong_download_path }}"
+    state: present
+
+- name: Hold Kong version
+  ansible.builtin.dpkg_selections:
+    name: kong
+    selection: hold

@@ -1,0 +1,12 @@
+- include_tasks: install.yml
+- include_tasks: postgres.yml
+- include_tasks: config.yml
+- include_tasks: service.yml
+- include_tasks: kong_objects.yml
+
+- include_tasks: prometheus.yml
+- include_tasks: grafana.yml
+
+- name: HA status
+  ansible.builtin.debug:
+    msg: "Kong HA + DR setup completed successfully"

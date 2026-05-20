@@ -1,0 +1,14 @@
+---
+# =====================================================
+# ENABLE PROMETHEUS PLUGIN ON KONG
+# =====================================================
+
+- name: Enable Prometheus plugin (global)
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8001/plugins
+    method: POST
+    body_format: json
+    body:
+      name: prometheus
+    status_code: [200, 201, 409]
+

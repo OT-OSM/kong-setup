@@ -1,0 +1,5 @@
+- name: Run Kong migrations
+  ansible.builtin.shell: kong migrations bootstrap || kong migrations up
+
+- name: Start Kong
+  ansible.builtin.shell: kong restart
