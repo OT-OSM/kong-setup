@@ -1,20 +1,15 @@
 ---
 # =====================================================
-# KONG SERVICE MANAGEMENT (DBLESS + POSTGRES SAFE)
+# KONG SERVICE MANAGEMENT (PRODUCTION SAFE)
 # =====================================================
-- name: Wait for Kong service to be available
-  ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}"
-    method: GET
-    status_code: [200, 404]
-  register: svc_check
-  retries: 10
-  delay: 2
-  until: svc_check.status in [200, 404]
-  
+
 - name: Validate Kong config
   ansible.builtin.command: kong check /etc/kong/kong.conf
   changed_when: false
+
+# =====================================================
+# STOP KONG (SAFE)
+# =====================================================
 
 - name: Stop Kong safely
   ansible.builtin.systemd:
@@ -23,7 +18,7 @@
   failed_when: false
 
 # =====================================================
-# POSTGRES MODE BLOCK
+# POSTGRES MIGRATION BLOCK
 # =====================================================
 
 - block:
@@ -54,21 +49,21 @@
 
     - name: Run migrations bootstrap (first time only)
       ansible.builtin.command: >
-        kong migrations bootstrap -c {{ kong_conf_dir }}/kong.conf
+        kong migrations bootstrap -c /etc/kong/kong.conf
       when: "'kong' not in schema_check.stdout"
 
     - name: Run migrations up
       ansible.builtin.command: >
-        kong migrations up -c {{ kong_conf_dir }}/kong.conf
+        kong migrations up -c /etc/kong/kong.conf
 
     - name: Run migrations finish
       ansible.builtin.command: >
-        kong migrations finish -c {{ kong_conf_dir }}/kong.conf
+        kong migrations finish -c /etc/kong/kong.conf
 
   when: (kong_mode | default('postgres') | trim | lower) == "postgres"
 
 # =====================================================
-# START KONG (COMMON FOR BOTH MODES)
+# START KONG
 # =====================================================
 
 - name: Start Kong
@@ -77,12 +72,30 @@
     state: started
     enabled: true
 
+# =====================================================
+# WAIT FOR KONG READINESS (IMPORTANT FIX)
+# =====================================================
+
 - name: Wait for Kong Admin API to be ready
   ansible.builtin.uri:
-    url: http://{{ ansible_host }}:8001/status
+    url: "http://{{ ansible_host }}:8001/status"
     method: GET
-    status_code: [200, 204]
+    status_code: 200
   register: kong_status
   retries: 60
   delay: 5
-  until: kong_status.status in [200, 204]
+  until: kong_status.status == 200
+
+# =====================================================
+# WAIT FOR FULL DATABASE READINESS
+# =====================================================
+
+- name: Wait for Kong DB to be ready
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8001/status"
+    method: GET
+    status_code: 200
+  register: kong_db_ready
+  retries: 40
+  delay: 5
+  until: kong_db_ready.json.database.state == "ready"
