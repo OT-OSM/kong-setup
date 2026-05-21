@@ -14,7 +14,7 @@
     url: "http://127.0.0.1:8001/status"
     method: GET
   register: kong_status
-  retries: 30
+  retries: 60
   delay: 5
   until: kong_status.status == 200
   changed_when: false
