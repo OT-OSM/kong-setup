@@ -1,22 +1,26 @@
 - name: Wait for Kong Admin API to be ready
   ansible.builtin.uri:
-    url: http://{{ ansible_host }}:8001/status
+    url: "http://{{ ansible_host }}:8001/status"
     method: GET
     status_code: 200
   register: kong_status
   retries: 30
   delay: 5
   until: kong_status.status == 200
-  
-  - name: Create Service
+
+- name: Create Service
   ansible.builtin.uri:
-    url: http://{{ ansible_host }}:8001/services
+    url: "http://{{ ansible_host }}:8001/services"
     method: POST
     body:
       name: "{{ kong_service_name }}"
       url: "{{ kong_upstream_url }}"
     body_format: json
     status_code: [201, 409]
+
+- name: Wait after service creation
+  ansible.builtin.pause:
+    seconds: 2
 
 - name: Create Route
   ansible.builtin.uri:
@@ -28,7 +32,11 @@
     body_format: json
     status_code: [201, 409]
 
-- name: Enable Key Auth
+- name: Wait after route creation
+  ansible.builtin.pause:
+    seconds: 3
+
+- name: Enable Key Auth Plugin
   ansible.builtin.uri:
     url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
     method: POST
@@ -36,7 +44,11 @@
       name: key-auth
     body_format: json
     status_code: [201, 409]
-    
+  retries: 3
+  delay: 2
+  register: keyauth_result
+  until: keyauth_result.status in [201, 409]
+
 - name: Enable JWT Plugin
   ansible.builtin.uri:
     url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
@@ -45,8 +57,12 @@
       name: jwt
     body_format: json
     status_code: [201, 409]
-    
-    - name: Enable Rate Limiting Plugin
+  retries: 3
+  delay: 2
+  register: jwt_result
+  until: jwt_result.status in [201, 409]
+
+- name: Enable Rate Limiting Plugin
   ansible.builtin.uri:
     url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
     method: POST
@@ -57,10 +73,14 @@
         policy: local
     body_format: json
     status_code: [201, 409]
-    
-- name: Enable Prometheus Plugin
+  retries: 3
+  delay: 2
+  register: rl_result
+  until: rl_result.status in [201, 409]
+
+- name: Enable Prometheus Plugin (global)
   ansible.builtin.uri:
-    url: http://{{ ansible_host }}:8001/plugins
+    url: "http://{{ ansible_host }}:8001/plugins"
     method: POST
     body:
       name: prometheus
