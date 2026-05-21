@@ -12,10 +12,16 @@ pg_user: kong
 pg_password: kong
 pg_database: kong
 
+# Kong config path (IMPORTANT FIX)
 kong_conf_dir: "/etc/kong"
 
-# Optional but recommended (avoids future template errors)
-kong_admin_url: "http://127.0.0.1:8001"
+# Kong Admin API (use IP-safe access instead of localhost)
+kong_admin_url: "http://{{ ansible_host }}:8001"
 
-# Plugin defaults 
+# Plugin config defaults
 kong_rate_limit_per_minute: 100
+
+# Optional but useful for stability
+kong_admin_timeout: 60
+kong_wait_retries: 60
+kong_wait_delay: 5
