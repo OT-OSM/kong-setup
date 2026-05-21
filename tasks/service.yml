@@ -3,3 +3,13 @@
 
 - name: Start Kong
   ansible.builtin.shell: kong restart
+
+- name: Wait for Kong Admin API
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8001/status
+    method: GET
+    status_code: 200
+  register: kong_status
+  retries: 10
+  delay: 3
+  until: kong_status.status == 200
