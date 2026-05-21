@@ -2,7 +2,16 @@
 # =====================================================
 # KONG SERVICE MANAGEMENT (DBLESS + POSTGRES SAFE)
 # =====================================================
-
+- name: Wait for Kong service to be available
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}"
+    method: GET
+    status_code: [200, 404]
+  register: svc_check
+  retries: 10
+  delay: 2
+  until: svc_check.status in [200, 404]
+  
 - name: Validate Kong config
   ansible.builtin.command: kong check /etc/kong/kong.conf
   changed_when: false
