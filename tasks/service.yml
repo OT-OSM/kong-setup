@@ -74,6 +74,6 @@
     method: GET
     status_code: [200, 204]
   register: kong_status
-  retries: 40
+  retries: 60
   delay: 5
   until: kong_status.status in [200, 204]
