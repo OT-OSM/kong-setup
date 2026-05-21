@@ -54,12 +54,6 @@
     body_format: json
     status_code: [201, 409]
 
-
-- name: Wait after route creation
-  ansible.builtin.pause:
-    seconds: 2
-
-
 # =====================================================
 # KEY AUTH PLUGIN
 # =====================================================
