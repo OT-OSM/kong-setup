@@ -4,7 +4,7 @@
     method: GET
     status_code: 200
   register: kong_status
-  retries: 30
+  retries: 40
   delay: 5
   until: kong_status.status == 200
 
