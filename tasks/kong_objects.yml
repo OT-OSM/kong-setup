@@ -36,7 +36,28 @@
       name: key-auth
     body_format: json
     status_code: [201, 409]
-
+    
+- name: Enable JWT Plugin
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
+    method: POST
+    body:
+      name: jwt
+    body_format: json
+    status_code: [201, 409]
+    
+    - name: Enable Rate Limiting Plugin
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
+    method: POST
+    body:
+      name: rate-limiting
+      config:
+        minute: 100
+        policy: local
+    body_format: json
+    status_code: [201, 409]
+    
 - name: Enable Prometheus Plugin
   ansible.builtin.uri:
     url: http://{{ ansible_host }}:8001/plugins
