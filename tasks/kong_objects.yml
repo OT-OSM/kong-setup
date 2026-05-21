@@ -1,16 +1,32 @@
-- name: Wait for Kong Admin API to be ready
+# =====================================================
+# WAIT FOR KONG ADMIN API (PORT + HTTP SAFE CHECK)
+# =====================================================
+
+- name: Wait for Kong Admin API port 8001
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 8001
+    delay: 5
+    timeout: 120
+
+- name: Wait for Kong Admin API status endpoint
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/status"
+    url: "http://127.0.0.1:8001/status"
     method: GET
-    status_code: 200
   register: kong_status
-  retries: 40
+  retries: 30
   delay: 5
   until: kong_status.status == 200
+  changed_when: false
+
+
+# =====================================================
+# CREATE SERVICE
+# =====================================================
 
 - name: Create Service
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/services"
+    url: "http://127.0.0.1:8001/services"
     method: POST
     body:
       name: "{{ kong_service_name }}"
@@ -18,13 +34,19 @@
     body_format: json
     status_code: [201, 409]
 
+
 - name: Wait after service creation
   ansible.builtin.pause:
     seconds: 2
 
+
+# =====================================================
+# CREATE ROUTE
+# =====================================================
+
 - name: Create Route
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/routes"
+    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/routes"
     method: POST
     body:
       paths:
@@ -32,39 +54,47 @@
     body_format: json
     status_code: [201, 409]
 
+
 - name: Wait after route creation
   ansible.builtin.pause:
-    seconds: 3
+    seconds: 2
+
+
+# =====================================================
+# KEY AUTH PLUGIN
+# =====================================================
 
 - name: Enable Key Auth Plugin
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
+    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/plugins"
     method: POST
     body:
       name: key-auth
     body_format: json
     status_code: [201, 409]
-  retries: 3
-  delay: 2
-  register: keyauth_result
-  until: keyauth_result.status in [201, 409]
+
+
+# =====================================================
+# JWT PLUGIN
+# =====================================================
 
 - name: Enable JWT Plugin
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
+    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/plugins"
     method: POST
     body:
       name: jwt
     body_format: json
     status_code: [201, 409]
-  retries: 3
-  delay: 2
-  register: jwt_result
-  until: jwt_result.status in [201, 409]
+
+
+# =====================================================
+# RATE LIMITING PLUGIN
+# =====================================================
 
 - name: Enable Rate Limiting Plugin
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
+    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/plugins"
     method: POST
     body:
       name: rate-limiting
@@ -73,14 +103,15 @@
         policy: local
     body_format: json
     status_code: [201, 409]
-  retries: 3
-  delay: 2
-  register: rl_result
-  until: rl_result.status in [201, 409]
+
+
+# =====================================================
+# PROMETHEUS (GLOBAL)
+# =====================================================
 
 - name: Enable Prometheus Plugin (global)
   ansible.builtin.uri:
-    url: "http://{{ ansible_host }}:8001/plugins"
+    url: "http://127.0.0.1:8001/plugins"
     method: POST
     body:
       name: prometheus
