@@ -21,9 +21,9 @@
 
     - name: Wait for PostgreSQL stable connection
       ansible.builtin.shell: |
-        PGPASSWORD={{ kong_pg_password }} psql \
-        -h {{ kong_pg_host }} \
-        -U {{ kong_pg_user }} \
+        PGPASSWORD={{ pg_password }} psql \
+        -h {{ pg_host }} \
+        -U {{ pg_user }} \
         -d postgres \
         -c "SELECT 1;"
       register: db_ping
@@ -34,10 +34,10 @@
 
     - name: Check Kong schema existence
       ansible.builtin.shell: |
-        PGPASSWORD={{ kong_pg_password }} psql \
-        -h {{ kong_pg_host }} \
-        -U {{ kong_pg_user }} \
-        -d {{ kong_pg_database }} \
+        PGPASSWORD={{ pg_password }} psql \
+        -h {{ pg_host }} \
+        -U {{ pg_user }} \
+        -d {{ pg_database }} \
         -c "\dt"
       register: schema_check
       changed_when: false
