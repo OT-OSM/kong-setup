@@ -1,6 +1,16 @@
-- name: Create Service
+- name: Wait for Kong Admin API to be ready
   ansible.builtin.uri:
-    url: http://127.0.0.1:8001/services
+    url: http://{{ ansible_host }}:8001/status
+    method: GET
+    status_code: 200
+  register: kong_status
+  retries: 30
+  delay: 5
+  until: kong_status.status == 200
+  
+  - name: Create Service
+  ansible.builtin.uri:
+    url: http://{{ ansible_host }}:8001/services
     method: POST
     body:
       name: "{{ kong_service_name }}"
@@ -10,7 +20,7 @@
 
 - name: Create Route
   ansible.builtin.uri:
-    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/routes"
+    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/routes"
     method: POST
     body:
       paths:
@@ -20,7 +30,7 @@
 
 - name: Enable Key Auth
   ansible.builtin.uri:
-    url: "http://127.0.0.1:8001/services/{{ kong_service_name }}/plugins"
+    url: "http://{{ ansible_host }}:8001/services/{{ kong_service_name }}/plugins"
     method: POST
     body:
       name: key-auth
@@ -29,7 +39,7 @@
 
 - name: Enable Prometheus Plugin
   ansible.builtin.uri:
-    url: http://127.0.0.1:8001/plugins
+    url: http://{{ ansible_host }}:8001/plugins
     method: POST
     body:
       name: prometheus
