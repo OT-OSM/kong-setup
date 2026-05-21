@@ -70,10 +70,10 @@
 
 - name: Wait for Kong Admin API to be ready
   ansible.builtin.uri:
-    url: http://127.0.0.1:8001/status
+    url: http://{{ ansible_host }}:8001/status
     method: GET
     status_code: [200, 204]
   register: kong_status
-  retries: 30
+  retries: 40
   delay: 5
   until: kong_status.status in [200, 204]
