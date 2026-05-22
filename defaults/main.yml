@@ -12,10 +12,10 @@ pg_user: kong
 pg_password: kong
 pg_database: kong
 
-# Kong config path (IMPORTANT FIX)
+# Kong config path
 kong_conf_dir: "/etc/kong"
 
-# Kong Admin API (use IP-safe access instead of localhost)
+# Kong Admin API 
 kong_admin_url: "http://{{ ansible_host }}:8001"
 
 # Plugin config defaults
